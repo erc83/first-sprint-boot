@@ -1,0 +1,58 @@
+pipeline {
+    agent any
+    tools {
+        maven "M2_HOME"
+        jdk "JDK 17"
+    }
+    stages {
+        stage('Build') {
+            steps {
+                git branch: 'master', url: 'https://github.com/erc83/first-sprint-boot.git'
+                bat "mvn clean package -DskipTests"
+            }
+        }
+        stage('UNIT TESTS'){
+            steps{
+                echo 'Ejecutando Tests'
+                bat "mvn test"
+            }
+        }
+
+        stage ('SonarQube Analysis') {
+            steps {
+                print ("Executing Sonar Analysis")             
+                bat "mvn clean verify sonar:sonar -Dsonar.host.url=http://127.0.0.1:9000 -Dmaven.test.failure.ignore=true -Dsonar.token=squ_75984bdfa00f0aeb7bc9b0b6f82070caf7d77d2e -Dsonar.projectKey=first-sprint-boot-sonar -Dsonar.projectName='first-sprint-boot-sonar"
+            }
+        }
+        
+        stage("Upload Artifact") {
+            steps{
+                nexusArtifactUploader(
+                    nexusVersion:'nexus3',
+                    protocol:'http',
+                    nexusUrl:'localhost:8085',
+                    groupId:'QA',
+                    version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",
+                    repository: 'first-sprint-boot-repo',
+                    credentialsId: 'NexusLogin',
+                    artifacts: [
+                        [   artifactId: 'first-sprint-boot-repo',
+                            classifier: '',
+                            file: 'target/demo-0.0.1-SNAPSHOT.jar',
+                            type: 'jar'
+                        ]
+                    ]
+                )
+            }
+        }  
+    }
+    post {
+        always {
+            echo 'This will always run'
+            slackSend (
+                channel: '#time-tracker-ci',
+                message: "*${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}\nMore info at: ${env.BUILD_URL}"
+            )
+        }
+    }
+}
