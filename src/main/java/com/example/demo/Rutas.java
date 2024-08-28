@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController                 // clases que definen rutas
 public class Rutas {
     
+    // http://localhost:8081/hola
     @GetMapping ("/hola")
     String primeraRuta() {
         return "Hola mundo desde Spring Controller :)";
@@ -16,6 +17,7 @@ public class Rutas {
 
     // aplicando path param
     // http://localhost:8081/libro/1
+
     @GetMapping ("/libro/{id}")
     String leerLibros(@PathVariable int id) {
         return "Leyendo el libro id: " + id;

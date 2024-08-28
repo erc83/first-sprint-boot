@@ -4,6 +4,13 @@ pipeline {
         maven "M2_HOME"
         jdk "JDK 17"
     }
+    // def COLOR_MAP = [
+    //     'SUCCESS': 'good',
+    //     'FAILURE': 'danger',
+    // ]
+    //environment {
+    //    scannerHome=tool'SonarScanner'
+    //}
     stages {
         stage('Build') {
             steps {
@@ -13,15 +20,32 @@ pipeline {
         }
         stage('UNIT TESTS'){
             steps{
+                //Unix version
+                //sh: ‘mvn test’
+                //Ejecutar los tests
                 echo 'Ejecutando Tests'
                 bat "mvn test"
+            }
+        }
+        
+        stage('Run SoapUI Tests') {
+            steps {
+                script {
+                    bat '"C:\\Program Files\\SmartBear\\SoapUI-5.7.2\\bin\\testrunner.bat" -r -j -f"results" "C:\\Users\\espin\\Desktop\\prueba_practica_modulo_4\\REST-first-sprint-boot-soapui-project.xml"'
+                }
             }
         }
 
         stage ('SonarQube Analysis') {
             steps {
-                print ("Executing Sonar Analysis")             
-                bat "mvn clean verify sonar:sonar -Dsonar.host.url=http://127.0.0.1:9000 -Dmaven.test.failure.ignore=true -Dsonar.token=squ_75984bdfa00f0aeb7bc9b0b6f82070caf7d77d2e -Dsonar.projectKey=first-sprint-boot-sonar -Dsonar.projectName='first-sprint-boot-sonar"
+                print ("Executing Sonar Analysis")
+                
+                bat "mvn clean verify sonar:sonar sonar:sonar -Dsonar.host.url=http://127.0.0.1:9000 -Dmaven.test.failure.ignore=true -Dsonar.token=squ_59cf11793e7486920b1da33c89463bb7d1c5af11 -Dsonar.projectKey=first-sprint-boot-sonar -Dsonar.projectName='first-sprint-boot-sonar"
+
+                // squ_75984bdfa00f0aeb7bc9b0b6f82070caf7d77d2e
+                // mvn package  crea el jar
+                // sonar:sonar 
+                // le pasamos al url local porque 
             }
         }
         
@@ -46,13 +70,22 @@ pipeline {
             }
         }  
     }
+    // post
     post {
         always {
             echo 'This will always run'
             slackSend (
                 channel: '#time-tracker-ci',
+                // channel: '#first-sprint-boot',
+                // color: 'danger',
                 message: "*${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}\nMore info at: ${env.BUILD_URL}"
             )
         }
+        //success {
+        //    echo 'This will run only if successful'
+        //}
+        //failure {
+        //    echo 'This will run only if failed'
+        //}
     }
 }
